@@ -1,13 +1,27 @@
 {
-  "name": "winston3-azureblob-transport",
+  "name": "winston-azure-blob",
   "version": "0.1.1",
-  "description": "An Azure Blob transport for winston3",
+  "description": "NEW winston transport for azure blob storage",
+  "keywords": [
+    "winston",
+    "transport",
+    "azure",
+    "blob",
+    "log"
+  ],
+  "homepage": "https://github.com/agmoss/winston-azure-blob#readme",
+  "bugs": {
+    "url": "https://github.com/agmoss/winston-azure-blob/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sdnetwork/winston3-azureblob-transport.git"
+  },
+  "license": "ISC",
+  "author": "Andrew Moss <andrew@m0ss.dev>",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
-  "engines": {
-    "node": ">=6.0.0"
-  },
   "directories": {
     "lib": "lib"
   },
@@ -19,23 +33,6 @@
     "build": "tsc",
     "example": "DEBUG=* ts-node examples/index.ts"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/sdnetwork/winston3-azureblob-transport.git"
-  },
-  "keywords": [
-    "winston",
-    "transport",
-    "azure",
-    "blob",
-    "log"
-  ],
-  "author": "sdnetwork",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/sdnetwork/winston3-azureblob-transport/issues"
-  },
-  "homepage": "https://github.com/sdnetwork/winston3-azureblob-transport#readme",
   "dependencies": {
     "async": "^3.2.0",
     "azure-storage": "^2.10.3",
@@ -43,9 +40,6 @@
     "moment": "^2.29.1",
     "triple-beam": "^1.3.0",
     "winston-transport": "^4.4.0"
-  },
-  "peerDependencies": {
-    "winston": ">=3.0.0"
   },
   "devDependencies": {
     "@types/async": "^3.2.5",
@@ -72,5 +66,11 @@
     "tsc": "^1.20150623.0",
     "typescript": "^4.2.3",
     "winston": ">=3.0.0"
+  },
+  "peerDependencies": {
+    "winston": ">=3.0.0"
+  },
+  "engines": {
+    "node": ">=6.0.0"
   }
 }
