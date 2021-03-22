@@ -22,7 +22,7 @@ yarn install winston-azure-blob
 
 ```typescript
   import * as winston from "winston";
-  import azureBlobTransport from "winston-azure-blob";
+  import { AzureBlobTransport } from "winston-azure-blob";
 
   const logger = winston.createLogger({
     format: winston.format.combine(
@@ -31,7 +31,7 @@ yarn install winston-azure-blob
         winston.format.json()
     ),
     transports: [
-      new (azureBlobTransport)({
+      new (AzureBlobTransport)({
         account: {
           name: "Azure storage account sub domain ([A-Za-z0-9])",
           key: "The long Azure storage secret key"

@@ -31,7 +31,8 @@
   "scripts": {
     "test": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register 'test/**/*.ts'",
     "build": "tsc",
-    "example": "DEBUG=* ts-node examples/index.ts"
+    "example": "DEBUG=* ts-node examples/index.ts",
+    "prepublish": "yarn run build"
   },
   "dependencies": {
     "async": "^3.2.0",
