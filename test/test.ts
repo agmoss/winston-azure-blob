@@ -15,11 +15,11 @@ describe('AzureBlobTransport', () => {
       level: 'info',
       bufferLogSize: 1,
       syncTimeout: 0,
-      rotatePeriod: '',
-      eol: '\n'
+      rotatePeriod: ''
     })
     expect(azBlob.containerName).to.equal('sample')
     expect(azBlob.blobName).to.equal('logs')
     expect(azBlob.level).to.equal('info')
+    expect(azBlob.eol).to.equal('\n')
   })
 })

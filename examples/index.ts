@@ -22,9 +22,7 @@ const logger = winston.createLogger({
       blobName: 'logs',
       level: 'info',
       bufferLogSize: 1,
-      syncTimeout: 0,
-      rotatePeriod: '',
-      eol: '\n'
+      syncTimeout: 0
     })
   ]
 })

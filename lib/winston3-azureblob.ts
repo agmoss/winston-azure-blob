@@ -73,7 +73,7 @@ export class AzureBlob extends Transport implements IAzureBlob {
   buffer: Array<any>
   timeoutFn: NodeJS.Timeout | null
 
-  constructor (opts: Transport.TransportStreamOptions & ILoggerDefaults) {
+  constructor (opts: Transport.TransportStreamOptions & Partial<ILoggerDefaults>) {
     super(opts)
 
     const options = { ...loggerDefaults, ...opts }
