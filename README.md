@@ -1,6 +1,8 @@
-# winston-azure-blob
+# `winston-azure-blob`
 
 > An Azure Blob transport for winston3
+
+[![NPM](https://img.shields.io/npm/v/winston-azure-blob?style=for-the-badge)](https://www.npmjs.com/package/winston-azure-blob)
 
 ## Highlights
 
