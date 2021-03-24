@@ -1,11 +1,11 @@
-import { AzureBlob as AzureBlobTransport } from '../lib/winston3-azureblob'
+import { winstonAzureBlob } from '../lib/winston-azure-blob'
 import { expect } from 'chai'
 import * as dotenv from 'dotenv'
 dotenv.config()
 
-describe('AzureBlobTransport', () => {
+describe('WinstonAzureBlob', () => {
   it('options', () => {
-    const azBlob = new (AzureBlobTransport)({
+    const azBlob = winstonAzureBlob({
       account: {
         name: process.env.ACCOUNT_NAME || 'account-name',
         key: process.env.ACCOUNT_KEY || 'account-key'

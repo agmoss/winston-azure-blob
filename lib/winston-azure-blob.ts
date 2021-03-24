@@ -1,11 +1,11 @@
 import Transport from 'winston-transport'
 import async from 'async'
-import * as azure from 'azure-storage'
+import { BlobService, createBlobService, createBlobServiceWithSas, StorageError } from 'azure-storage'
 import moment from 'moment'
 import { MESSAGE } from 'triple-beam'
 import Debug from 'debug'
 
-const debug = Debug('winston3-azureblob-transport')
+const debug = Debug('winston-azure-blob')
 const MAX_APPEND_BLOB_BLOCK_SIZE = 4 * 1024 * 1024
 
 /**
@@ -13,9 +13,9 @@ const MAX_APPEND_BLOB_BLOCK_SIZE = 4 * 1024 * 1024
  */
 type Account = { name: string, key: string } | { host: string, sasToken: string }
 
-interface IAzureBlob {
+interface IWinstonAzureBlob {
   account: Account
-  azBlobClient: azure.BlobService
+  azBlobClient: BlobService
   containerName: string
   blobName: string
   rotatePeriod: string
@@ -29,7 +29,7 @@ interface IAzureBlob {
 /**
  * Default options for AzureBlob
  */
-type ILoggerDefaults = Pick<IAzureBlob, 'account' | 'containerName' | 'blobName' | 'eol' | 'bufferLogSize' | 'syncTimeout' | 'rotatePeriod'>
+type ILoggerDefaults = Pick<IWinstonAzureBlob, 'account' | 'containerName' | 'blobName' | 'eol' | 'bufferLogSize' | 'syncTimeout' | 'rotatePeriod'>
 
 /**
  * Data to be logged
@@ -47,23 +47,23 @@ const loggerDefaults: ILoggerDefaults = {
   containerName: 'YOUR_CONTAINER',
   blobName: 'YOUR_BLOBNAME',
   eol: '\n', // End of line character to concatenate log
-  rotatePeriod: '', // moment format to rotate ,empty if you don't want rotate
+  rotatePeriod: '', // moment format to rotate log file
   // due to limitation of 50K block in azure blob storage we add some params to avoid the limit
   bufferLogSize: -1, // minimum numbers of log before send the block
   syncTimeout: 0 // maximum time between two push to azure blob
 }
 
 //
-// Inherit from `winston-transport` so you can take advantage
+// Extend from `winston-transport` to take advantage
 // of the base functionality and `.exceptions.handle()`.
 //
-export class AzureBlob extends Transport implements IAzureBlob {
+export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
   account!: {
     name: string
     key: string
   }
 
-  azBlobClient: azure.BlobService
+  azBlobClient: BlobService
   containerName: string
   blobName: string
   rotatePeriod: string
@@ -123,9 +123,9 @@ export class AzureBlob extends Transport implements IAzureBlob {
 
   _createAzClient (account_info: Account) {
     if ('key' in account_info) {
-      return azure.createBlobService(account_info.name, account_info.key)
+      return createBlobService(account_info.name, account_info.key)
     }
-    return azure.createBlobServiceWithSas(account_info.host, account_info.sasToken)
+    return createBlobServiceWithSas(account_info.host, account_info.sasToken)
   }
 
   _chunkString (str: string, len: number) {
@@ -155,10 +155,10 @@ export class AzureBlob extends Transport implements IAzureBlob {
     debug('Numbers of appendblock needed', chunks.length)
     debug('Size of chunks', toSend.length)
     async.eachSeries(chunks, (chunk, nextappendblock) => {
-      azClient.appendBlockFromText(containerName, blobName, chunk, {}, (err: azure.StorageError, _result) => {
+      azClient.appendBlockFromText(containerName, blobName, chunk, {}, (err: StorageError, _result) => {
         if (err && err.code) {
           if (err.code === 'BlobNotFound') {
-            return azClient.createAppendBlobFromText(containerName, blobName, chunk, {}, (err: azure.StorageError, _result) => {
+            return azClient.createAppendBlobFromText(containerName, blobName, chunk, {}, (err: StorageError, _result) => {
               if (err) { debug('Error during appendblob creation', err.code) }
               nextappendblock()
             })
@@ -172,4 +172,8 @@ export class AzureBlob extends Transport implements IAzureBlob {
       })
     }, callback)
   }
+}
+
+export const winstonAzureBlob = (opts: ConstructorParameters<typeof WinstonAzureBlob>[0]) => {
+  return new WinstonAzureBlob(opts)
 }

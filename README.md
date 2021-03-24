@@ -22,7 +22,7 @@ yarn install winston-azure-blob
 
 ```typescript
   import * as winston from "winston";
-  import { AzureBlobTransport } from "winston-azure-blob";
+  import { winstonAzureBlob } from "winston-azure-blob";
 
   const logger = winston.createLogger({
     format: winston.format.combine(
@@ -31,7 +31,7 @@ yarn install winston-azure-blob
         winston.format.json()
     ),
     transports: [
-      new (AzureBlobTransport)({
+      winstonAzureBlob({
         account: {
           name: "Azure storage account sub domain ([A-Za-z0-9])",
           key: "The long Azure storage secret key"
@@ -53,7 +53,7 @@ yarn install winston-azure-blob
   logger.warn("Hello!");
 ```
 
-The AzureBlob transport accepts the following options:
+The winstonAzureBlob transport accepts the following options:
 
 * __level:__ Level of messages that this transport should log (defaults to `info`).
 * __account.name:__ The name of the Windows Azure storage account to use

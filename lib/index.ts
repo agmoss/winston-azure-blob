@@ -1,1 +1,1 @@
-export { AzureBlob as AzureBlobTransport } from './winston3-azureblob'
+export { WinstonAzureBlob, winstonAzureBlob } from './winston-azure-blob'

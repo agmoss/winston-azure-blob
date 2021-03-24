@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import faker from 'faker'
 import * as winston from 'winston'
-import { AzureBlobTransport } from '../lib'
+import { winstonAzureBlob } from '../lib'
 import * as dotenv from 'dotenv'
 
 dotenv.config()
@@ -13,13 +13,13 @@ const logger = winston.createLogger({
     winston.format.json()
   ),
   transports: [
-    new (AzureBlobTransport)({
+    winstonAzureBlob({
       account: {
         host: process.env.HOST || 'host',
         sasToken: process.env.SAS_TOKEN || 'sasToken'
       },
       containerName: 'sample',
-      blobName: 'logs',
+      blobName: 'logs7',
       level: 'info',
       bufferLogSize: 1,
       syncTimeout: 0

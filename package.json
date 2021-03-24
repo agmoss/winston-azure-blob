@@ -15,10 +15,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sdnetwork/winston3-azureblob-transport.git"
+    "url": "git+https://github.com/agmoss/winston-azure-blob.git"
   },
   "license": "ISC",
-  "author": "Andrew Moss <andrew@m0ss.dev>",
+  "author": "sdnetwork",
+  "contributors": [
+    "Andrew Moss <andrew@m0ss.dev>"
+  ],
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
