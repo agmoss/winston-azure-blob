@@ -1,5 +1,5 @@
 import Transport from "winston-transport";
-import { eachSeries } from "async";
+import * as async from "async";
 import {
   BlobService,
   createBlobService,
@@ -178,7 +178,7 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
     const chunks = this._chunkString(toSend, MAX_APPEND_BLOB_BLOCK_SIZE);
     debug("Numbers of appendblock needed", chunks.length);
     debug("Size of chunks", toSend.length);
-    eachSeries(
+    async.eachSeries(
       chunks,
       (chunk, nextappendblock) => {
         azClient.appendBlockFromText(
