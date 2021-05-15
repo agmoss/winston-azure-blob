@@ -1,6 +1,6 @@
 {
   "name": "winston-azure-blob",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "NEW winston transport for azure blob storage",
   "keywords": [
     "winston",
