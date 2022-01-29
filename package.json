@@ -35,7 +35,8 @@
     "test": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register 'test/**/*.ts'",
     "build": "tsc",
     "example": "DEBUG=* ts-node examples/index.ts",
-    "prepublish": "yarn run build"
+    "prepublish": "yarn run build",
+    "format": "prettier --write \"lib/**/*.ts\" \"test/**/*.ts\" \"examples/**/*.ts\""
   },
   "dependencies": {
     "azure-storage": "^2.10.3",
@@ -58,15 +59,17 @@
     "chai": "^4.3.4",
     "dotenv": "^8.2.0",
     "eslint": "^7.22.0",
+    "eslint-config-prettier": "^8.3.0",
     "eslint-config-standard": "^16.0.2",
     "eslint-plugin-import": "^2.22.1",
     "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-promise": "^4.3.1",
     "faker": "^5.4.0",
     "lodash": "^4.17.21",
     "mocha": "^8.3.2",
+    "prettier": "^2.5.1",
     "ts-node": "^9.1.1",
-    "tsc": "^1.20150623.0",
     "typescript": "^4.2.3",
     "winston": ">=3.0.0"
   },

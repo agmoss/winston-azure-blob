@@ -1,25 +1,106 @@
-import { winstonAzureBlob } from '../lib/winston-azure-blob'
-import { expect } from 'chai'
-import * as dotenv from 'dotenv'
-dotenv.config()
+import { ILoggerDefaults, winstonAzureBlob } from "../lib";
+import { expect } from "chai";
+import * as dotenv from "dotenv";
+import * as winston from "winston";
+import faker from "faker";
+import { StorageError } from "azure-storage";
 
-describe('WinstonAzureBlob', () => {
-  it('options', () => {
-    const azBlob = winstonAzureBlob({
-      account: {
-        name: process.env.ACCOUNT_NAME || 'account-name',
-        key: process.env.ACCOUNT_KEY || 'account-key'
-      },
-      containerName: 'sample',
-      blobName: 'logs',
-      level: 'info',
-      bufferLogSize: 1,
-      syncTimeout: 0,
-      rotatePeriod: ''
-    })
-    expect(azBlob.containerName).to.equal('sample')
-    expect(azBlob.blobName).to.equal('logs')
-    expect(azBlob.level).to.equal('info')
-    expect(azBlob.eol).to.equal('\n')
-  })
-})
+dotenv.config();
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+describe("WinstonAzureBlob", () => {
+    type _constants = Pick<ILoggerDefaults, "containerName" | "blobName">;
+
+    const constants: _constants = {
+        containerName: "sample",
+        blobName: "test_log",
+    };
+
+    it("name and key options", () => {
+        const azBlob = winstonAzureBlob({
+            account: {
+                name: process.env.ACCOUNT_NAME || "account-name",
+                key: process.env.ACCOUNT_KEY || "account-key",
+            },
+            level: "info",
+            bufferLogSize: 1,
+            syncTimeout: 0,
+            rotatePeriod: "",
+            ...constants,
+        });
+        expect(azBlob.containerName).to.equal(constants.containerName);
+        expect(azBlob.blobName).to.equal(constants.blobName);
+        expect(azBlob.level).to.equal("info");
+        expect(azBlob.eol).to.equal("\n");
+    });
+
+    it("host and sasToken options", () => {
+        const azBlob = winstonAzureBlob({
+            account: {
+                host: process.env.HOST || "host",
+                sasToken: process.env.SAS_TOKEN || "sasToken",
+            },
+            level: "info",
+            bufferLogSize: 1,
+            syncTimeout: 0,
+            rotatePeriod: "",
+            ...constants,
+        });
+        expect(azBlob.containerName).to.equal(constants.containerName);
+        expect(azBlob.blobName).to.equal(constants.blobName);
+        expect(azBlob.level).to.equal("info");
+        expect(azBlob.eol).to.equal("\n");
+    });
+
+    it("sends logs", async () => {
+        const contents = faker.lorem.paragraph(3);
+
+        const transport = winstonAzureBlob({
+            account: {
+                host: process.env.HOST || "host",
+                sasToken: process.env.SAS_TOKEN || "sasToken",
+            },
+            ...constants,
+            level: "info",
+            bufferLogSize: 1,
+            syncTimeout: 0,
+        });
+
+        const logger = winston.createLogger({
+            transports: [transport],
+        });
+
+        logger.info(contents);
+
+        await delay(1000);
+
+        const client = transport.azBlobClient;
+
+        // get blob from azure
+        client.getBlobToText(
+            constants.containerName,
+            constants.blobName,
+            function (error: StorageError, result) {
+                if (error) {
+                    throw error;
+                }
+                expect(result).to.equal(
+                    `{"message":"${contents}","level":"info"}\n`
+                );
+
+                // delete blob from azure
+                client.deleteBlob(
+                    constants.containerName,
+                    constants.blobName,
+                    function (error, result) {
+                        if (error) {
+                            throw error;
+                        }
+                        expect(result.isSuccessful).to.equal(true);
+                    }
+                );
+            }
+        );
+    });
+});
