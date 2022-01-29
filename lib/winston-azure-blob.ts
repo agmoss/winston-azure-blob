@@ -1,14 +1,18 @@
 import Transport from "winston-transport";
 import * as async from "async";
-import {
-    BlobService,
-    createBlobService,
-    createBlobServiceWithSas,
-    StorageError,
-} from "azure-storage";
+// import {
+//     BlobService,
+//     createBlobService,
+//     createBlobServiceWithSas,
+//     StorageError,
+// } from "azure-storage";
 import moment from "moment";
 import { MESSAGE } from "triple-beam";
 import Debug from "debug";
+import {
+    BlobServiceClient,
+    StorageSharedKeyCredential,
+} from "@azure/storage-blob";
 
 const debug = Debug("winston-azure-blob");
 const MAX_APPEND_BLOB_BLOCK_SIZE = 4 * 1024 * 1024;
@@ -22,7 +26,7 @@ type Account =
 
 interface IWinstonAzureBlob {
     account: Account;
-    azBlobClient: BlobService;
+    azBlobClient: BlobServiceClient;
     containerName: string;
     blobName: string;
     rotatePeriod: string;
@@ -79,7 +83,7 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
         key: string;
     };
 
-    azBlobClient: BlobService;
+    azBlobClient: BlobServiceClient;
     containerName: string;
     blobName: string;
     rotatePeriod: string;
@@ -155,11 +159,19 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
 
     _createAzClient(account_info: Account) {
         if ("key" in account_info) {
-            return createBlobService(account_info.name, account_info.key);
+            const sharedKeyCredential = new StorageSharedKeyCredential(
+                account_info.name,
+                account_info.key
+            );
+
+            return new BlobServiceClient(
+                `https://${account_info.name}.blob.core.windows.net`,
+                sharedKeyCredential
+            );
         }
-        return createBlobServiceWithSas(
-            account_info.host,
-            account_info.sasToken
+
+        return new BlobServiceClient(
+            `${account_info.host}${account_info.sasToken}`
         );
     }
 
@@ -187,7 +199,7 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
             blobName = WinstonAzureBlob.generateBlobName({
                 blobName,
                 rotatePeriod: this.rotatePeriod,
-              });
+            });
         }
 
         const toSend =
@@ -199,44 +211,56 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
         debug("Size of chunks", toSend.length);
         async.eachSeries(
             chunks,
-            (chunk, nextappendblock) => {
-                azClient.appendBlockFromText(
-                    containerName,
-                    blobName,
-                    chunk,
-                    {},
-                    (err: StorageError, _result) => {
-                        if (err && err.code) {
-                            if (err.code === "BlobNotFound") {
-                                return azClient.createAppendBlobFromText(
-                                    containerName,
-                                    blobName,
-                                    chunk,
-                                    {},
-                                    (err: StorageError, _result) => {
-                                        if (err) {
-                                            debug(
-                                                "Error during appendblob creation",
-                                                err.code
-                                            );
+            (chunk, nextAppendBlock) => {
+                const containerClient =
+                    azClient.getContainerClient(containerName);
+
+                const appendBlobClient =
+                    containerClient.getAppendBlobClient(blobName);
+
+                appendBlobClient.exists().then((res) => {
+                    if (res) {
+                        appendBlobClient
+                            .appendBlock(chunk, chunk.length)
+                            .then((result) => {
+                                if (result.errorCode) {
+                                    debug(result.errorCode, result);
+                                }
+                            })
+                            .catch((err) => {
+                                debug("Error with appendBlock operation ", err);
+                            })
+                            .finally(() => {
+                                nextAppendBlock();
+                            });
+                    } else {
+                        
+                        appendBlobClient
+                            .create()
+                            .then(() => {
+                                debug("New append blob created");
+                                appendBlobClient
+                                    .appendBlock(chunk, chunk.length)
+                                    .then((result) => {
+                                        if (result.errorCode) {
+                                            debug(result.errorCode, result);
                                         }
-                                        nextappendblock();
-                                    }
-                                );
-                            }
-                            if (
-                                err.code === "AuthorizationResourceTypeMismatch"
-                            ) {
-                                debug(err.message);
-                            }
-                            debug(
-                                "Error during appendblob operation",
-                                err.code
-                            );
-                        }
-                        nextappendblock();
+                                    })
+                                    .catch((err) => {
+                                        debug(
+                                            "Error with appendBlock operation ",
+                                            err
+                                        );
+                                    });
+                            })
+                            .catch((err) => {
+                                debug("Error creating append blob", err);
+                            })
+                            .finally(() => {
+                                nextAppendBlock();
+                            });
                     }
-                );
+                });
             },
             callback
         );
@@ -245,6 +269,4 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
 
 export const winstonAzureBlob = (
     opts: ConstructorParameters<typeof WinstonAzureBlob>[0]
-) => {
-    return new WinstonAzureBlob(opts);
-};
+) => new WinstonAzureBlob(opts);

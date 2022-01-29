@@ -19,7 +19,7 @@ const logger = winston.createLogger({
                 sasToken: process.env.SAS_TOKEN || "sasToken",
             },
             containerName: "sample",
-            blobName: "logs9",
+            blobName: "logs14",
             level: "info",
             bufferLogSize: 1,
             syncTimeout: 0,
@@ -28,6 +28,6 @@ const logger = winston.createLogger({
 });
 
 // eslint-disable-next-line array-callback-return
-_.times(100).map((v) => {
+_.times(3).map((v) => {
     logger.info(`index ${v} sample log ${faker.lorem.paragraph(3)}`);
 });
