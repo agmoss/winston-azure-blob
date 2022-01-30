@@ -1,1 +1,1 @@
-export { WinstonAzureBlob, winstonAzureBlob } from './winston-azure-blob'
+export * from "./winston-azure-blob";
