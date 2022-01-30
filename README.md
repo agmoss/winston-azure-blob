@@ -10,6 +10,7 @@
 - Typescript ready
 - SAS support
 - Highly configurable
+- Uses the new [`@azure/storage-blob`](https://www.npmjs.com/package/@azure/storage-blob) SDK
 
 ## Installation
 
@@ -44,7 +45,7 @@ yarn install winston-azure-blob
         level: "info",
         bufferLogSize : 1,
         syncTimeout : 0,
-        rotatePeriod : "",
+        rotatePeriod : "YYYY-MM-DD",
         eol : "\n"
       })
     ]
@@ -53,18 +54,18 @@ yarn install winston-azure-blob
   logger.warn("Hello!");
 ```
 
-The winstonAzureBlob transport accepts the following options:
+## API
 
-* __level:__ Level of messages that this transport should log (defaults to `info`).
+* __level:__ Log level of messages for the transport (defaults to `info`).
 * __account.name:__ The name of the Windows Azure storage account to use
 * __account.key:__ The access key used to authenticate into this storage account
 * __blobName:__ The name of the blob to log
 * __containerName:__ The container which will contain the logs
-* __eol:__ The character append to each log (By default a carriage return)
-* __rotatePeriod:__ A moment format ex : YYYY-MM-DD will generate blobName.2000.01.01
-* __bufferLogSize:__ A minimum number of logs before sync the blob, set to 1 if you want sync at each log
-* __syncTimeout:__ The maximum time between two sync, set to zero if you don't want
+* __eol:__ The character append to each log (By default, a carriage return)
+* __rotatePeriod:__ A moment format ex: YYYY-MM-DD will generate blobName.2000.01.01
+* __bufferLogSize:__ A minimum number of logs before syncing the blob, set to 1 if you want to sync at each log
+* __syncTimeout:__ The maximum time between two sync calls. Set to zero for realtime logging
 
-## Inspiration
+## Inspo & Credit
 
 <https://github.com/sdnetwork/winston3-azureblob-transport>

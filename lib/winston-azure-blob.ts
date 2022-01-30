@@ -1,15 +1,10 @@
 import Transport from "winston-transport";
 import * as async from "async";
-// import {
-//     BlobService,
-//     createBlobService,
-//     createBlobServiceWithSas,
-//     StorageError,
-// } from "azure-storage";
 import moment from "moment";
 import { MESSAGE } from "triple-beam";
 import Debug from "debug";
 import {
+    AppendBlobClient,
     BlobServiceClient,
     StorageSharedKeyCredential,
 } from "@azure/storage-blob";
@@ -69,8 +64,8 @@ const loggerDefaults: ILoggerDefaults = {
     eol: "\n", // End of line character to concatenate log
     rotatePeriod: "", // moment format to rotate log file
     // due to limitation of 50K block in azure blob storage we add some params to avoid the limit
-    bufferLogSize: -1, // minimum numbers of log before send the block
-    syncTimeout: 0, // maximum time between two push to azure blob
+    bufferLogSize: -1, // A minimum number of logs before syncing the blob, set to 1 if you want to sync at each log
+    syncTimeout: 0, // The maximum time between two sync calls. Set to zero for realtime logging
 };
 
 //
@@ -100,8 +95,7 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
 
         const options = { ...loggerDefaults, ...opts };
 
-        // create az blob client
-        this.azBlobClient = this._createAzClient(options.account);
+        this.azBlobClient = this.createAzBlobClient(options.account);
         this.containerName = options.containerName;
         this.blobName = options.blobName;
         this.rotatePeriod = options.rotatePeriod;
@@ -117,14 +111,14 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
         this.timeoutFn = null;
     }
 
-    static generateBlobName({
+    static generateBlobNameWithRotatePeriod({
         blobName,
         rotatePeriod,
     }: Pick<IWinstonAzureBlob, "blobName" | "rotatePeriod">) {
         return blobName + "." + moment().format(rotatePeriod);
     }
 
-    push(data: Data, callback: async.ErrorCallback<Error>) {
+    private push(data: Data, callback: async.ErrorCallback<Error>) {
         if (data) {
             this.buffer.push(data);
         }
@@ -157,7 +151,7 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
         });
     }
 
-    _createAzClient(account_info: Account) {
+    createAzBlobClient(account_info: Account) {
         if ("key" in account_info) {
             const sharedKeyCredential = new StorageSharedKeyCredential(
                 account_info.name,
@@ -175,7 +169,7 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
         );
     }
 
-    _chunkString(str: string, len: number) {
+    private _chunkString(str: string, len: number) {
         const size = Math.ceil(str.length / len);
         const r = Array(size);
         let offset = 0;
@@ -186,7 +180,28 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
         return r;
     }
 
-    _logToAppendBlob(tasks: Array<Data>, callback: async.ErrorCallback<Error>) {
+    private async _appendBlobOperation(
+        appendBlobClient: AppendBlobClient,
+        chunk: any,
+        nextAppendBlock: async.ErrorCallback<Error>
+    ) {
+        try {
+            await appendBlobClient.createIfNotExists();
+            const result = await appendBlobClient.appendBlock(
+                chunk,
+                chunk.length
+            );
+            if (result.errorCode) {
+                debug(result.errorCode, result);
+            }
+        } catch (err) {
+            debug(err);
+        } finally {
+            nextAppendBlock();
+        }
+    }
+
+    private _logToAppendBlob(tasks: Array<Data>, callback: async.ErrorCallback<Error>) {
         debug("Try to appendblock", tasks.length);
         // nothing to log
         if (tasks.length === 0) {
@@ -194,73 +209,37 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
         }
         const azClient = this.azBlobClient;
         const containerName = this.containerName;
+        const containerClient = azClient.getContainerClient(containerName);
+
         let blobName = this.blobName;
+
         if (this.rotatePeriod) {
-            blobName = WinstonAzureBlob.generateBlobName({
+            blobName = WinstonAzureBlob.generateBlobNameWithRotatePeriod({
                 blobName,
                 rotatePeriod: this.rotatePeriod,
             });
         }
 
+        const appendBlobClient = containerClient.getAppendBlobClient(blobName);
+
         const toSend =
             tasks
                 .map((item) => item[MESSAGE as unknown as string])
                 .join(this.eol) + this.eol;
+
         const chunks = this._chunkString(toSend, MAX_APPEND_BLOB_BLOCK_SIZE);
+
         debug("Numbers of appendblock needed", chunks.length);
         debug("Size of chunks", toSend.length);
+
         async.eachSeries(
             chunks,
             (chunk, nextAppendBlock) => {
-                const containerClient =
-                    azClient.getContainerClient(containerName);
-
-                const appendBlobClient =
-                    containerClient.getAppendBlobClient(blobName);
-
-                appendBlobClient.exists().then((res) => {
-                    if (res) {
-                        appendBlobClient
-                            .appendBlock(chunk, chunk.length)
-                            .then((result) => {
-                                if (result.errorCode) {
-                                    debug(result.errorCode, result);
-                                }
-                            })
-                            .catch((err) => {
-                                debug("Error with appendBlock operation ", err);
-                            })
-                            .finally(() => {
-                                nextAppendBlock();
-                            });
-                    } else {
-                        
-                        appendBlobClient
-                            .create()
-                            .then(() => {
-                                debug("New append blob created");
-                                appendBlobClient
-                                    .appendBlock(chunk, chunk.length)
-                                    .then((result) => {
-                                        if (result.errorCode) {
-                                            debug(result.errorCode, result);
-                                        }
-                                    })
-                                    .catch((err) => {
-                                        debug(
-                                            "Error with appendBlock operation ",
-                                            err
-                                        );
-                                    });
-                            })
-                            .catch((err) => {
-                                debug("Error creating append blob", err);
-                            })
-                            .finally(() => {
-                                nextAppendBlock();
-                            });
-                    }
-                });
+                this._appendBlobOperation(
+                    appendBlobClient,
+                    chunk,
+                    nextAppendBlock
+                );
             },
             callback
         );

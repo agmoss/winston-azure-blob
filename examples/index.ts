@@ -1,5 +1,5 @@
 import _ from "lodash";
-import faker from "faker";
+import { randAnimalType } from "@ngneat/falso";
 import * as winston from "winston";
 import { winstonAzureBlob } from "../lib";
 import * as dotenv from "dotenv";
@@ -19,15 +19,16 @@ const logger = winston.createLogger({
                 sasToken: process.env.SAS_TOKEN || "sasToken",
             },
             containerName: "sample",
-            blobName: "logs14",
+            blobName: "example_logs",
             level: "info",
             bufferLogSize: 1,
             syncTimeout: 0,
+            rotatePeriod:"YYYY-MM-DD"
         }),
     ],
 });
 
 // eslint-disable-next-line array-callback-return
-_.times(3).map((v) => {
-    logger.info(`index ${v} sample log ${faker.lorem.paragraph(3)}`);
+_.times(100).map((v) => {
+    logger.info(`index ${v} sample log ${randAnimalType()}`);
 });
