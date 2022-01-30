@@ -23,7 +23,7 @@ const logger = winston.createLogger({
             level: "info",
             bufferLogSize: 1,
             syncTimeout: 0,
-            rotatePeriod:"YYYY-MM-DD"
+            rotatePeriod: "YYYY-MM-DD",
         }),
     ],
 });

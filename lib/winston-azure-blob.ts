@@ -201,7 +201,10 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
         }
     }
 
-    private _logToAppendBlob(tasks: Array<Data>, callback: async.ErrorCallback<Error>) {
+    private _logToAppendBlob(
+        tasks: Array<Data>,
+        callback: async.ErrorCallback<Error>
+    ) {
         debug("Try to appendblock", tasks.length);
         // nothing to log
         if (tasks.length === 0) {

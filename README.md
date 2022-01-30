@@ -6,15 +6,15 @@
 
 ## Highlights
 
-- Simple API
-- Typescript ready
-- SAS support
-- Highly configurable
-- Uses the new [`@azure/storage-blob`](https://www.npmjs.com/package/@azure/storage-blob) SDK
+-   Simple API
+-   Typescript ready
+-   SAS support
+-   Highly configurable
+-   Uses the new [`@azure/storage-blob`](https://www.npmjs.com/package/@azure/storage-blob) SDK
 
 ## Installation
 
-``` bash
+```bash
 yarn install winston
 yarn install winston-azure-blob
 ```
@@ -36,7 +36,7 @@ yarn install winston-azure-blob
         account: {
           name: "Azure storage account sub domain ([A-Za-z0-9])",
           key: "The long Azure storage secret key"
-          // or 
+          // or
           host: 'The host address',
           sasToken: 'The Shared Access Signature token'
         },
@@ -50,21 +50,25 @@ yarn install winston-azure-blob
       })
     ]
   });
-  
+
   logger.warn("Hello!");
 ```
 
 ## API
 
-* __level:__ Log level of messages for the transport (defaults to `info`).
-* __account.name:__ The name of the Windows Azure storage account to use
-* __account.key:__ The access key used to authenticate into this storage account
-* __blobName:__ The name of the blob to log
-* __containerName:__ The container which will contain the logs
-* __eol:__ The character append to each log (By default, a carriage return)
-* __rotatePeriod:__ A moment format ex: YYYY-MM-DD will generate blobName.2000.01.01
-* __bufferLogSize:__ A minimum number of logs before syncing the blob, set to 1 if you want to sync at each log
-* __syncTimeout:__ The maximum time between two sync calls. Set to zero for realtime logging
+-   **level:** Log level of messages for the transport (defaults to `info`).
+-   **account** Azure storage account credentials
+    -   **account.name:** The name of the Windows Azure storage account to use
+    -   **account.key:** The access key used to authenticate into this storage account
+    -   or
+    -   **account.host:** http address of storage account
+    -   **account.sasToken:** shared access signature of storage account
+-   **blobName:** The name of the blob to log
+-   **containerName:** The container which will contain the logs
+-   **eol:** The character append to each log (By default, a carriage return)
+-   **rotatePeriod:** A moment format ex: YYYY-MM-DD will generate blobName.2000.01.01
+-   **bufferLogSize:** A minimum number of logs before syncing the blob, set to 1 if you want to sync at each log
+-   **syncTimeout:** The maximum time between two sync calls. Set to zero for realtime logging
 
 ## Inspo & Credit
 
