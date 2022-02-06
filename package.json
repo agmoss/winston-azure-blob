@@ -37,7 +37,8 @@
     "example": "DEBUG='winston-azure-blob' ts-node examples/index.ts",
     "prepublish": "yarn run build",
     "format": "prettier --write \"lib/**/*.ts\" \"test/**/*.ts\" \"examples/**/*.ts\"",
-    "lint": "eslint 'lib/**/*.ts' --fix"
+    "lint": "eslint 'lib/**/*.ts' --fix",
+    "release": "standard-version"
   },
   "dependencies": {
     "@azure/storage-blob": "^12.8.0",
@@ -69,6 +70,7 @@
     "lodash": "^4.17.21",
     "mocha": "^9.2.0",
     "prettier": "^2.5.1",
+    "standard-version": "^9.3.2",
     "ts-node": "^10.4.0",
     "typescript": "^4.5.5",
     "winston": ">=3.0.0"
