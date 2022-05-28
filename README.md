@@ -23,7 +23,7 @@ yarn install winston-azure-blob
 
 ```typescript
   import * as winston from "winston";
-  import { winstonAzureBlob } from "winston-azure-blob";
+  import { winstonAzureBlob, logger } from "winston-azure-blob";
 
   const logger = winston.createLogger({
     format: winston.format.combine(
@@ -46,7 +46,8 @@ yarn install winston-azure-blob
         bufferLogSize : 1,
         syncTimeout : 0,
         rotatePeriod : "YYYY-MM-DD",
-        eol : "\n"
+        eol : "\n",
+        extension : extensions.LOG
       })
     ]
   });
@@ -69,6 +70,7 @@ yarn install winston-azure-blob
 -   **rotatePeriod:** A moment format ex: YYYY-MM-DD will generate blobName.2000.01.01
 -   **bufferLogSize:** A minimum number of logs before syncing the blob, set to 1 if you want to sync at each log
 -   **syncTimeout:** The maximum time between two sync calls. Set to zero for realtime logging
+-   **extension:** The file extension for the log file. Omit for no file extension. Currently the only extension supported is ".log" via `extensions`
 
 ## Inspo & Credit
 

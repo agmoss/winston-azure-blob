@@ -1,12 +1,20 @@
-import { ILoggerDefaults, winstonAzureBlob } from "../lib";
+import {
+    extensions,
+    ILoggerDefaults,
+    winstonAzureBlob,
+    WinstonAzureBlob,
+} from "../lib";
 import { expect } from "chai";
 import * as dotenv from "dotenv";
 import * as winston from "winston";
 import { randAnimalType } from "@ngneat/falso";
-import { delay, streamToString } from "./utils";
+import { delay, formatYmd, streamToString } from "./utils";
 
 dotenv.config();
 
+/**
+ * These tests require all 4 ENV variables (HOST, SAS_TOKEN, ACCOUNT_NAME, and ACCOUNT_KEY)
+ */
 describe("WinstonAzureBlob", () => {
     type _constants = Pick<ILoggerDefaults, "containerName" | "blobName">;
 
@@ -70,6 +78,31 @@ describe("WinstonAzureBlob", () => {
         expect(azBlob.blobName).to.equal(constants.blobName);
         expect(azBlob.level).to.equal("info");
         expect(azBlob.eol).to.equal("\n");
+    });
+
+    it("has a proper file name with opts", () => {
+        const azBlob = winstonAzureBlob({
+            account: {
+                host: process.env.HOST || "host",
+                sasToken: process.env.SAS_TOKEN || "sasToken",
+            },
+            level: "info",
+            bufferLogSize: 1,
+            syncTimeout: 0,
+            rotatePeriod: "YYYY-MM-DD",
+            extension: extensions.LOG,
+            ...constants,
+        });
+
+        const generatedBlobName = WinstonAzureBlob.generateBlobName({
+            blobName: azBlob.blobName,
+            rotatePeriod: azBlob.rotatePeriod,
+            extension: azBlob.extension,
+        });
+
+        expect(generatedBlobName).to.equal(
+            constants.blobName + "." + formatYmd(new Date()) + ".log"
+        );
     });
 
     it("sends logs", async () => {
