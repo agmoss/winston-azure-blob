@@ -23,7 +23,7 @@ yarn install winston-azure-blob
 
 ```typescript
   import * as winston from "winston";
-  import { winstonAzureBlob, logger } from "winston-azure-blob";
+  import { winstonAzureBlob, logger, extension } from "winston-azure-blob";
 
   const logger = winston.createLogger({
     format: winston.format.combine(
