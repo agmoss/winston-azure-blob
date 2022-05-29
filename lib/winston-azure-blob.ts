@@ -19,25 +19,24 @@ type Account =
     | { name: string; key: string }
     | { host: string; sasToken: string };
 
-interface IWinstonAzureBlob {
-    account: Account;
-    azBlobClient: BlobServiceClient;
-    containerName: string;
-    blobName: string;
-    rotatePeriod: string;
-    eol: string;
-    bufferLogSize: number;
-    syncTimeout: number;
-    buffer: Array<any>;
-    timeoutFn: NodeJS.Timeout | null;
-    extension?: extensions;
-}
-
 /**
  * File extensions for the log file. More can be added
  */
 export enum extensions {
     LOG = ".log",
+}
+interface IWinstonAzureBlob {
+    account: Account;
+    azBlobClient: BlobServiceClient;
+    blobName: string;
+    buffer: Array<any>;
+    bufferLogSize: number;
+    containerName: string;
+    eol: string;
+    extension?: extensions;
+    rotatePeriod: string;
+    syncTimeout: number;
+    timeoutFn: NodeJS.Timeout | null;
 }
 
 /**
@@ -46,13 +45,13 @@ export enum extensions {
 export type ILoggerDefaults = Pick<
     IWinstonAzureBlob,
     | "account"
-    | "containerName"
     | "blobName"
-    | "eol"
     | "bufferLogSize"
-    | "syncTimeout"
-    | "rotatePeriod"
+    | "containerName"
+    | "eol"
     | "extension"
+    | "rotatePeriod"
+    | "syncTimeout"
 >;
 
 /**
@@ -65,17 +64,17 @@ type Data = Record<string, any>;
  */
 const loggerDefaults: ILoggerDefaults = {
     account: {
-        name: "YOUR_ACCOUNT_NAME",
         key: "YOUR_ACCOUNT_KEY",
+        name: "YOUR_ACCOUNT_NAME",
     },
-    containerName: "YOUR_CONTAINER",
     blobName: "YOUR_BLOBNAME",
-    eol: "\n", // End of line character to concatenate log
-    rotatePeriod: "", // moment format to rotate log file
     // due to limitation of 50K block in azure blob storage we add some params to avoid the limit
     bufferLogSize: -1, // A minimum number of logs before syncing the blob, set to 1 if you want to sync at each log
-    syncTimeout: 0, // The maximum time between two sync calls. Set to zero for realtime logging
+    containerName: "YOUR_CONTAINER",
+    eol: "\n", // End of line character to concatenate log
     extension: undefined, // File extension for the log file
+    rotatePeriod: "", // moment format to rotate log file
+    syncTimeout: 0, // The maximum time between two sync calls. Set to zero for realtime logging
 };
 
 //
@@ -84,20 +83,20 @@ const loggerDefaults: ILoggerDefaults = {
 //
 export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
     account!: {
-        name: string;
         key: string;
+        name: string;
     };
 
     azBlobClient: BlobServiceClient;
-    containerName: string;
     blobName: string;
-    rotatePeriod: string;
-    eol: string;
-    bufferLogSize: number;
-    syncTimeout: number;
     buffer: Array<any>;
-    timeoutFn: NodeJS.Timeout | null;
+    bufferLogSize: number;
+    containerName: string;
+    eol: string;
     extension: extensions | undefined;
+    rotatePeriod: string;
+    syncTimeout: number;
+    timeoutFn: NodeJS.Timeout | null;
 
     constructor(
         opts: Transport.TransportStreamOptions & Partial<ILoggerDefaults>
@@ -107,20 +106,21 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
         const options = { ...loggerDefaults, ...opts };
 
         this.azBlobClient = this.createAzBlobClient(options.account);
-        this.containerName = options.containerName;
         this.blobName = options.blobName;
-        this.rotatePeriod = options.rotatePeriod;
-        this.eol = options.eol;
+        this.buffer = [];
         this.bufferLogSize = options.bufferLogSize;
-        this.syncTimeout = options.syncTimeout;
+        this.containerName = options.containerName;
+        this.eol = options.eol;
         this.extension = options.extension;
+        this.rotatePeriod = options.rotatePeriod;
+        this.syncTimeout = options.syncTimeout;
+        this.timeoutFn = null;
+
         if (this.bufferLogSize > 1 && !this.syncTimeout) {
             throw new Error(
                 "syncTimeout must be set, if there is a bufferLogSize"
             );
         }
-        this.buffer = [];
-        this.timeoutFn = null;
     }
 
     static tackOnRotatePeriodToBlobName({
@@ -151,9 +151,9 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
      */
     static generateBlobName({
         blobName,
-        rotatePeriod,
         extension,
-    }: Pick<IWinstonAzureBlob, "blobName" | "rotatePeriod" | "extension">) {
+        rotatePeriod,
+    }: Pick<IWinstonAzureBlob, "blobName" | "extension" | "rotatePeriod">) {
         return WinstonAzureBlob.tackOnExtensionToBlobName({
             blobName: WinstonAzureBlob.tackOnRotatePeriodToBlobName({
                 blobName,
@@ -261,8 +261,8 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
 
         const blobName = WinstonAzureBlob.generateBlobName({
             blobName: this.blobName,
-            rotatePeriod: this.rotatePeriod,
             extension: this.extension,
+            rotatePeriod: this.rotatePeriod,
         });
 
         const appendBlobClient = containerClient.getAppendBlobClient(blobName);

@@ -32,13 +32,13 @@
     "dist"
   ],
   "scripts": {
-    "test": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register 'test/**/*.ts'",
     "build": "tsc",
     "example": "DEBUG='winston-azure-blob' ts-node examples/index.ts",
-    "prepublish": "yarn run build",
     "format": "prettier --write \"lib/**/*.ts\" \"test/**/*.ts\" \"examples/**/*.ts\"",
     "lint": "eslint 'lib/**/*.ts' --fix",
-    "release": "standard-version"
+    "prepublish": "yarn run build",
+    "release": "standard-version",
+    "test": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register 'test/**/*.ts'"
   },
   "dependencies": {
     "@azure/storage-blob": "^12.8.0",

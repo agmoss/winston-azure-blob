@@ -12,6 +12,12 @@ module.exports = {
     plugins: ["@typescript-eslint", "prettier"],
     rules: {
         camelcase: 0,
+        "no-unused-vars":1,
         "no-undef": 0,
+        "sort-keys": [
+            "error",
+            "asc",
+            { caseSensitive: true, natural: false, minKeys: 2 },
+        ],
     },
 };

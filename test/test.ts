@@ -16,11 +16,11 @@ dotenv.config();
  * These tests require all 4 ENV variables (HOST, SAS_TOKEN, ACCOUNT_NAME, and ACCOUNT_KEY)
  */
 describe("WinstonAzureBlob", () => {
-    type _constants = Pick<ILoggerDefaults, "containerName" | "blobName">;
+    type _constants = Pick<ILoggerDefaults, "blobName" | "containerName">;
 
     const constants: _constants = {
-        containerName: "sample",
         blobName: "test_log",
+        containerName: "sample",
     };
 
     const transport = winstonAzureBlob({
@@ -29,8 +29,8 @@ describe("WinstonAzureBlob", () => {
             sasToken: process.env.SAS_TOKEN || "sasToken",
         },
         ...constants,
-        level: "info",
         bufferLogSize: 1,
+        level: "info",
         syncTimeout: 0,
     });
 
@@ -50,10 +50,11 @@ describe("WinstonAzureBlob", () => {
                 name: process.env.ACCOUNT_NAME || "account-name",
                 key: process.env.ACCOUNT_KEY || "account-key",
             },
-            level: "info",
+            
             bufferLogSize: 1,
-            syncTimeout: 0,
+            level: "info",
             rotatePeriod: "",
+            syncTimeout: 0,
             ...constants,
         });
         expect(azBlob.containerName).to.equal(constants.containerName);
@@ -68,10 +69,10 @@ describe("WinstonAzureBlob", () => {
                 host: process.env.HOST || "host",
                 sasToken: process.env.SAS_TOKEN || "sasToken",
             },
-            level: "info",
             bufferLogSize: 1,
-            syncTimeout: 0,
+            level: "info",
             rotatePeriod: "",
+            syncTimeout: 0,
             ...constants,
         });
         expect(azBlob.containerName).to.equal(constants.containerName);
@@ -86,18 +87,18 @@ describe("WinstonAzureBlob", () => {
                 host: process.env.HOST || "host",
                 sasToken: process.env.SAS_TOKEN || "sasToken",
             },
-            level: "info",
             bufferLogSize: 1,
-            syncTimeout: 0,
-            rotatePeriod: "YYYY-MM-DD",
             extension: extensions.LOG,
+            level: "info",
+            rotatePeriod: "YYYY-MM-DD",
+            syncTimeout: 0,
             ...constants,
         });
 
         const generatedBlobName = WinstonAzureBlob.generateBlobName({
             blobName: azBlob.blobName,
-            rotatePeriod: azBlob.rotatePeriod,
             extension: azBlob.extension,
+            rotatePeriod: azBlob.rotatePeriod,
         });
 
         expect(generatedBlobName).to.equal(
