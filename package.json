@@ -17,7 +17,7 @@
     "type": "git",
     "url": "git+https://github.com/agmoss/winston-azure-blob.git"
   },
-  "license": "ISC",
+  "license": "MIT",
   "author": "sdnetwork",
   "contributors": [
     "Andrew Moss <andrew@m0ss.dev>"

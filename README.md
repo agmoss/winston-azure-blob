@@ -8,7 +8,7 @@
 
 -   :heavy_check_mark: **Simple API** - Easy to use API with sensible defaults
 -   :large_blue_circle: **Typescript ready**
--   :closed_lock_with_key: **SAS support** - Use a shared access signature or key/name auth
+-   :closed_lock_with_key: **SAS support** - Use a Shared Access Signature or key/name auth
 -   :wrench: **Highly configurable** - Lots of options for customization in specific use cases
 -   :cloud: **Modern** - Uses the new [`@azure/storage-blob`](https://www.npmjs.com/package/@azure/storage-blob) SDK
 
@@ -22,37 +22,37 @@ yarn install winston-azure-blob
 ## Usage
 
 ```typescript
-  import * as winston from "winston";
-  import { winstonAzureBlob, logger, extensions } from "winston-azure-blob";
+import * as winston from "winston";
+import { winstonAzureBlob, extensions } from "winston-azure-blob";
 
-  const logger = winston.createLogger({
-    format: winston.format.combine(
-        winston.format.timestamp(),
-        winston.format.splat(),
-        winston.format.json()
-    ),
-    transports: [
-      winstonAzureBlob({
-        account: {
-          name: "Azure storage account sub domain ([A-Za-z0-9])",
-          key: "The long Azure storage secret key"
-          // or
-          host: 'The host address',
-          sasToken: 'The Shared Access Signature token'
-        },
-        blobName: "The name of the blob",
-        bufferLogSize : 1,
-        containerName: "A container name",
-        eol : "\n",
-        extension : extensions.LOG
-        level: "info",
-        rotatePeriod : "YYYY-MM-DD",
-        syncTimeout : 0,
-      })
-    ]
-  });
+const logger = winston.createLogger({
+  format: winston.format.combine(
+      winston.format.timestamp(),
+      winston.format.splat(),
+      winston.format.json()
+  ),
+  transports: [
+    winstonAzureBlob({
+      account: {
+        name: "Azure storage account sub domain ([A-Za-z0-9])",
+        key: "The long Azure storage secret key"
+        // or
+        host: 'The host address',
+        sasToken: 'The Shared Access Signature token'
+      },
+      blobName: "The name of the blob",
+      bufferLogSize : 1,
+      containerName: "A container name",
+      eol : "\n",
+      extension : extensions.LOG,
+      level: "info",
+      rotatePeriod : "YYYY-MM-DD",
+      syncTimeout : 0,
+    })
+  ]
+});
 
-  logger.warn("Hello!");
+logger.warn("Hello!");
 ```
 
 ## API
