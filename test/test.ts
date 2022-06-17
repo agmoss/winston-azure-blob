@@ -50,7 +50,7 @@ describe("WinstonAzureBlob", () => {
                 name: process.env.ACCOUNT_NAME || "account-name",
                 key: process.env.ACCOUNT_KEY || "account-key",
             },
-            
+
             bufferLogSize: 1,
             level: "info",
             rotatePeriod: "",
@@ -125,6 +125,44 @@ describe("WinstonAzureBlob", () => {
 
         expect(downloaded).to.equal(
             `{"level":"info","message":"${contents}"}\n`
+        );
+    });
+
+    it("handles incorrect account key/name information", () => {
+        expect(() => {
+            winstonAzureBlob({
+                account: {
+                    name: undefined as any,
+                    key: undefined as any,
+                },
+
+                bufferLogSize: 1,
+                level: "info",
+                rotatePeriod: "",
+                syncTimeout: 0,
+                ...constants,
+            });
+        }).to.throw(
+            "Azure account key/name must be string values, received key:undefined, name:undefined"
+        );
+    });
+
+    it("handles incorrect account host/sasToken information", () => {
+        expect(() => {
+            winstonAzureBlob({
+                account: {
+                    host: undefined as any,
+                    sasToken: undefined as any,
+                },
+
+                bufferLogSize: 1,
+                level: "info",
+                rotatePeriod: "",
+                syncTimeout: 0,
+                ...constants,
+            });
+        }).to.throw(
+            "Azure account host/sasToken must be string values, received key:undefined, name:undefined"
         );
     });
 });
