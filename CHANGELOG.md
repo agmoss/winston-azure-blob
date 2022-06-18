@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.3.2](https://github.com/agmoss/winston-azure-blob/compare/v1.3.1...v1.3.2) (2022-06-18)
+
+
+### Bug Fixes
+
+* Applying validation and reporting to Azure account credential arguments ([041df69](https://github.com/agmoss/winston-azure-blob/commit/041df69c7e4e6e22fefed3ea553d3567bcbc2ea5))
+
 ### 1.3.1 (2022-05-29)
 
 
