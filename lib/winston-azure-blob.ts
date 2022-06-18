@@ -105,6 +105,8 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
 
         const options = { ...loggerDefaults, ...opts };
 
+        this.isValidAccountOpts(options.account);
+
         this.azBlobClient = this.createAzBlobClient(options.account);
         this.blobName = options.blobName;
         this.buffer = [];
@@ -123,6 +125,34 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
         }
     }
 
+    /**
+     * Util Method
+     */
+    private isValidAccountOpts(account_info: Account) {
+        if ("key" in account_info) {
+            if (
+                typeof account_info.key !== "string" ||
+                typeof account_info.name !== "string"
+            ) {
+                throw new Error(
+                    `Azure account key/name must be string values, received key:${typeof account_info.key}, name:${typeof account_info.name} `
+                );
+            }
+        } else {
+            if (
+                typeof account_info.host !== "string" ||
+                typeof account_info.sasToken !== "string"
+            ) {
+                throw new Error(
+                    `Azure account host/sasToken must be string values, received key:${typeof account_info.host}, name:${typeof account_info.sasToken} `
+                );
+            }
+        }
+    }
+
+    /**
+     * Util Method
+     */
     static tackOnRotatePeriodToBlobName({
         blobName,
         rotatePeriod,
@@ -133,6 +163,9 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
         return blobName;
     }
 
+    /**
+     * Util Method
+     */
     static tackOnExtensionToBlobName({
         blobName,
         extension,
@@ -144,6 +177,7 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
     }
 
     /**
+     * Util Method
      * Create the name for the log file with user defined opts
      * @param blobName Base name for the log file
      * @param rotatePeriod moment format to rotate log file
