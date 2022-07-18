@@ -8,6 +8,7 @@ import {
     BlobServiceClient,
     StorageSharedKeyCredential,
 } from "@azure/storage-blob";
+import type { LogEntry } from "winston";
 
 const debug = Debug("winston-azure-blob");
 const MAX_APPEND_BLOB_BLOCK_SIZE = 4 * 1024 * 1024;
@@ -29,7 +30,7 @@ interface IWinstonAzureBlob {
     account: Account;
     azBlobClient: BlobServiceClient;
     blobName: string;
-    buffer: Array<any>;
+    buffer: Array<LogEntry>;
     bufferLogSize: number;
     containerName: string;
     eol: string;
@@ -53,11 +54,6 @@ export type ILoggerDefaults = Pick<
     | "rotatePeriod"
     | "syncTimeout"
 >;
-
-/**
- * Data to be logged
- */
-type Data = Record<string, any>;
 
 /**
  * Default options for constructing logger
@@ -89,7 +85,7 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
 
     azBlobClient: BlobServiceClient;
     blobName: string;
-    buffer: Array<any>;
+    buffer: Array<LogEntry>;
     bufferLogSize: number;
     containerName: string;
     eol: string;
@@ -105,9 +101,11 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
 
         const options = { ...loggerDefaults, ...opts };
 
-        this.isValidAccountOpts(options.account);
+        WinstonAzureBlob.isValidAccountOpts(options.account);
 
-        this.azBlobClient = this.createAzBlobClient(options.account);
+        this.azBlobClient = WinstonAzureBlob.createAzBlobClient(
+            options.account
+        );
         this.blobName = options.blobName;
         this.buffer = [];
         this.bufferLogSize = options.bufferLogSize;
@@ -125,10 +123,70 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
         }
     }
 
-    /**
-     * Util Method
-     */
-    private isValidAccountOpts(account_info: Account) {
+    static tackOnRotatePeriodToBlobName({
+        blobName,
+        rotatePeriod,
+    }: Pick<IWinstonAzureBlob, "blobName" | "rotatePeriod">) {
+        if (rotatePeriod) {
+            return blobName + "." + moment().format(rotatePeriod);
+        }
+        return blobName;
+    }
+
+    static tackOnExtensionToBlobName({
+        blobName,
+        extension,
+    }: Pick<IWinstonAzureBlob, "blobName" | "extension">) {
+        if (extension) {
+            return blobName + extension;
+        }
+        return blobName;
+    }
+
+    static generateBlobName({
+        blobName,
+        extension,
+        rotatePeriod,
+    }: Pick<IWinstonAzureBlob, "blobName" | "extension" | "rotatePeriod">) {
+        return WinstonAzureBlob.tackOnExtensionToBlobName({
+            blobName: WinstonAzureBlob.tackOnRotatePeriodToBlobName({
+                blobName,
+                rotatePeriod,
+            }),
+            extension,
+        });
+    }
+
+    static createAzBlobClient(account_info: Account) {
+        if ("key" in account_info) {
+            const sharedKeyCredential = new StorageSharedKeyCredential(
+                account_info.name,
+                account_info.key
+            );
+
+            return new BlobServiceClient(
+                `https://${account_info.name}.blob.core.windows.net`,
+                sharedKeyCredential
+            );
+        }
+
+        return new BlobServiceClient(
+            `${account_info.host}${account_info.sasToken}`
+        );
+    }
+
+    private static chunkString(str: string, len: number) {
+        const size = Math.ceil(str.length / len);
+        const r = Array<string>(size);
+        let offset = 0;
+        for (let i = 0; i < size; i++) {
+            r[i] = str.substring(offset, len);
+            offset += len;
+        }
+        return r;
+    }
+
+    private static isValidAccountOpts(account_info: Account) {
         if ("key" in account_info) {
             if (
                 typeof account_info.key !== "string" ||
@@ -150,118 +208,9 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
         }
     }
 
-    /**
-     * Util Method
-     */
-    static tackOnRotatePeriodToBlobName({
-        blobName,
-        rotatePeriod,
-    }: Pick<IWinstonAzureBlob, "blobName" | "rotatePeriod">) {
-        if (rotatePeriod) {
-            return blobName + "." + moment().format(rotatePeriod);
-        }
-        return blobName;
-    }
-
-    /**
-     * Util Method
-     */
-    static tackOnExtensionToBlobName({
-        blobName,
-        extension,
-    }: Pick<IWinstonAzureBlob, "blobName" | "extension">) {
-        if (extension) {
-            return blobName + extension;
-        }
-        return blobName;
-    }
-
-    /**
-     * Util Method
-     * Create the name for the log file with user defined opts
-     * @param blobName Base name for the log file
-     * @param rotatePeriod moment format to rotate log file
-     * @param extension File extension for the log file
-     */
-    static generateBlobName({
-        blobName,
-        extension,
-        rotatePeriod,
-    }: Pick<IWinstonAzureBlob, "blobName" | "extension" | "rotatePeriod">) {
-        return WinstonAzureBlob.tackOnExtensionToBlobName({
-            blobName: WinstonAzureBlob.tackOnRotatePeriodToBlobName({
-                blobName,
-                rotatePeriod,
-            }),
-            extension,
-        });
-    }
-
-    private push(data: Data, callback: async.ErrorCallback<Error>) {
-        if (data) {
-            this.buffer.push(data);
-        }
-        if (
-            this.bufferLogSize < 1 ||
-            this.buffer.length >= this.bufferLogSize
-        ) {
-            this._logToAppendBlob(this.buffer, callback); // in this case winston buffer for us
-            this.buffer = [];
-        } else if (this.syncTimeout && this.timeoutFn === null) {
-            this.timeoutFn = setTimeout(() => {
-                const tasks = this.buffer.slice(0);
-                this.buffer = [];
-                this.timeoutFn = null; // as we can receive push again after timeout we must relaunch the timeout
-                this._logToAppendBlob(tasks, () => {
-                    debug("Finish to appendblock", tasks.length);
-                });
-            }, this.syncTimeout);
-            callback();
-        } else {
-            // buffering
-            callback();
-        }
-    }
-
-    log(info: Data, callback: Function) {
-        this.push(info, () => {
-            this.emit("logged", info);
-            callback();
-        });
-    }
-
-    createAzBlobClient(account_info: Account) {
-        if ("key" in account_info) {
-            const sharedKeyCredential = new StorageSharedKeyCredential(
-                account_info.name,
-                account_info.key
-            );
-
-            return new BlobServiceClient(
-                `https://${account_info.name}.blob.core.windows.net`,
-                sharedKeyCredential
-            );
-        }
-
-        return new BlobServiceClient(
-            `${account_info.host}${account_info.sasToken}`
-        );
-    }
-
-    private _chunkString(str: string, len: number) {
-        const size = Math.ceil(str.length / len);
-        const r = Array(size);
-        let offset = 0;
-        for (let i = 0; i < size; i++) {
-            r[i] = str.substr(offset, len);
-            offset += len;
-        }
-        return r;
-    }
-
-    private async _appendBlobOperation(
+    private static async appendBlobOperation(
         appendBlobClient: AppendBlobClient,
-        chunk: any,
+        chunk: string,
         nextAppendBlock: async.ErrorCallback<Error>
     ) {
         try {
@@ -280,14 +229,44 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
         }
     }
 
-    private _logToAppendBlob(
-        tasks: Array<Data>,
-        callback: async.ErrorCallback<Error>
-    ) {
+    log(info: LogEntry, next: () => void) {
+        this.push(info, () => {
+            this.emit("logged", info);
+            next();
+        });
+    }
+
+    private push(data: LogEntry, next: () => void) {
+        if (data) {
+            this.buffer.push(data);
+        }
+        if (
+            this.bufferLogSize < 1 ||
+            this.buffer.length >= this.bufferLogSize
+        ) {
+            this.logToAppendBlob(this.buffer, next); // in this case winston buffer for us
+            this.buffer = [];
+        } else if (this.syncTimeout && this.timeoutFn === null) {
+            this.timeoutFn = setTimeout(() => {
+                const tasks = this.buffer.slice(0);
+                this.buffer = [];
+                this.timeoutFn = null; // as we can receive push again after timeout we must relaunch the timeout
+                this.logToAppendBlob(tasks, () => {
+                    debug("Finish to appendblock", tasks.length);
+                });
+            }, this.syncTimeout);
+            next();
+        } else {
+            // buffering
+            next();
+        }
+    }
+
+    private logToAppendBlob(tasks: Array<LogEntry>, next: () => void) {
         debug("Try to appendblock", tasks.length);
         // nothing to log
         if (tasks.length === 0) {
-            return callback();
+            return next();
         }
         const azClient = this.azBlobClient;
         const containerName = this.containerName;
@@ -303,10 +282,15 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
 
         const toSend =
             tasks
+                // Symbol cannot be used as an index type. Therefore, a cast is required.
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 .map((item) => item[MESSAGE as unknown as string])
                 .join(this.eol) + this.eol;
 
-        const chunks = this._chunkString(toSend, MAX_APPEND_BLOB_BLOCK_SIZE);
+        const chunks = WinstonAzureBlob.chunkString(
+            toSend,
+            MAX_APPEND_BLOB_BLOCK_SIZE
+        );
 
         debug("Numbers of appendblock needed", chunks.length);
         debug("Size of chunks", toSend.length);
@@ -314,13 +298,13 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
         async.eachSeries(
             chunks,
             (chunk, nextAppendBlock) => {
-                this._appendBlobOperation(
+                WinstonAzureBlob.appendBlobOperation(
                     appendBlobClient,
                     chunk,
                     nextAppendBlock
                 );
             },
-            callback
+            next
         );
     }
 }
