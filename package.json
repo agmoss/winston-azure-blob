@@ -38,7 +38,7 @@
     "lint": "eslint 'lib/**/*.ts' --fix",
     "prepublish": "yarn run build",
     "release": "standard-version",
-    "test": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register 'test/**/*.ts'"
+    "test": "DEBUG='winston-azure-blob' env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register 'test/**/*.ts'"
   },
   "dependencies": {
     "@azure/storage-blob": "^12.8.0",
