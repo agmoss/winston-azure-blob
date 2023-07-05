@@ -159,6 +159,9 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
 
     static createAzBlobClient(account_info: Account) {
         if ("key" in account_info) {
+            if (account_info.key == "") {
+                return BlobServiceClient.fromConnectionString(account_info.name);
+            }
             const sharedKeyCredential = new StorageSharedKeyCredential(
                 account_info.name,
                 account_info.key
