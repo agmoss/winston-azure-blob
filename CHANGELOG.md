@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.4.0](https://github.com/agmoss/winston-azure-blob/compare/v1.3.1...v1.4.0) (2023-07-17)
+
+
+### Features
+
+* Adding better support for connection strings ([f1ab160](https://github.com/agmoss/winston-azure-blob/commit/f1ab160a304a313882044d910a329add2f6c2a42))
+* Adding some better internal types and stronger linting rules ([36b113b](https://github.com/agmoss/winston-azure-blob/commit/36b113bfa422ad39309e356e67978536ee423181))
+
+
+### Bug Fixes
+
+* Applying validation and reporting to Azure account credential arguments ([041df69](https://github.com/agmoss/winston-azure-blob/commit/041df69c7e4e6e22fefed3ea553d3567bcbc2ea5))
+
 ### 1.3.1 (2022-05-29)
 
 
