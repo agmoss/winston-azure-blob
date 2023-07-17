@@ -18,7 +18,8 @@ const MAX_APPEND_BLOB_BLOCK_SIZE = 4 * 1024 * 1024;
  */
 type Account =
     | { name: string; key: string }
-    | { host: string; sasToken: string };
+    | { host: string; sasToken: string }
+    | { connectionString: string };
 
 /**
  * File extensions for the log file. More can be added
@@ -78,11 +79,7 @@ const loggerDefaults: ILoggerDefaults = {
 // of the base functionality and `.exceptions.handle()`.
 //
 export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
-    account!: {
-        key: string;
-        name: string;
-    };
-
+    account!: Account;
     azBlobClient: BlobServiceClient;
     blobName: string;
     buffer: Array<LogEntry>;
@@ -170,6 +167,12 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
             );
         }
 
+        if ("connectionString" in account_info) {
+            return BlobServiceClient.fromConnectionString(
+                account_info.connectionString
+            );
+        }
+
         return new BlobServiceClient(
             `${account_info.host}${account_info.sasToken}`
         );
@@ -196,6 +199,16 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
                     `Azure account key/name must be string values, received key:${typeof account_info.key}, name:${typeof account_info.name} `
                 );
             }
+            return;
+        }
+
+        if ("connectionString" in account_info) {
+            if (typeof account_info.connectionString !== "string") {
+                throw new Error(
+                    `Azure account connectionString must be a string value, received connectionString:${typeof account_info.connectionString} `
+                );
+            }
+            
         } else {
             if (
                 typeof account_info.host !== "string" ||

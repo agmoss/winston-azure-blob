@@ -165,4 +165,22 @@ describe("WinstonAzureBlob", () => {
             "Azure account host/sasToken must be string values, received key:undefined, name:undefined"
         );
     });
+
+    it("handles incorrect connectionString information", () => {
+        expect(() => {
+            winstonAzureBlob({
+                account: {
+                    connectionString: undefined as any
+                },
+
+                bufferLogSize: 1,
+                level: "info",
+                rotatePeriod: "",
+                syncTimeout: 0,
+                ...constants,
+            });
+        }).to.throw(
+            "Azure account connectionString must be a string value, received connectionString:undefined"
+        );
+    });
 });
