@@ -18,7 +18,8 @@ const MAX_APPEND_BLOB_BLOCK_SIZE = 4 * 1024 * 1024;
  */
 type Account =
     | { name: string; key: string }
-    | { host: string; sasToken: string };
+    | { host: string; sasToken: string }
+    | { connectionString: string };
 
 /**
  * File extensions for the log file. More can be added
@@ -78,11 +79,7 @@ const loggerDefaults: ILoggerDefaults = {
 // of the base functionality and `.exceptions.handle()`.
 //
 export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
-    account!: {
-        key: string;
-        name: string;
-    };
-
+    account!: Account;
     azBlobClient: BlobServiceClient;
     blobName: string;
     buffer: Array<LogEntry>;
@@ -159,9 +156,6 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
 
     static createAzBlobClient(account_info: Account) {
         if ("key" in account_info) {
-            if (account_info.key == "") {
-                return BlobServiceClient.fromConnectionString(account_info.name);
-            }
             const sharedKeyCredential = new StorageSharedKeyCredential(
                 account_info.name,
                 account_info.key
@@ -170,6 +164,12 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
             return new BlobServiceClient(
                 `https://${account_info.name}.blob.core.windows.net`,
                 sharedKeyCredential
+            );
+        }
+
+        if ("connectionString" in account_info) {
+            return BlobServiceClient.fromConnectionString(
+                account_info.connectionString
             );
         }
 
@@ -199,6 +199,16 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
                     `Azure account key/name must be string values, received key:${typeof account_info.key}, name:${typeof account_info.name} `
                 );
             }
+            return;
+        }
+
+        if ("connectionString" in account_info) {
+            if (typeof account_info.connectionString !== "string") {
+                throw new Error(
+                    `Azure account connectionString must be a string value, received connectionString:${typeof account_info.connectionString} `
+                );
+            }
+            
         } else {
             if (
                 typeof account_info.host !== "string" ||

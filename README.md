@@ -39,6 +39,8 @@ const logger = winston.createLogger({
         // or
         host: 'The host address',
         sasToken: 'The Shared Access Signature token'
+        // or 
+        connectionString: 'A connection string for the storage account'
       },
       blobName: "The name of the blob",
       bufferLogSize : 1,
@@ -63,6 +65,8 @@ logger.warn("Hello!");
     -   or
     -   **account.host:** http address of storage account
     -   **account.sasToken:** shared access signature of storage account
+    -   or
+    -   **account.connectionString:** A connection string for the storage account
 -   **blobName:** The name of the blob to log
 -   **bufferLogSize:** A minimum number of logs before syncing the blob, set to 1 if you want to sync at each log
 -   **containerName:** The container which will contain the logs
