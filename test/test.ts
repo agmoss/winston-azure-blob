@@ -1,6 +1,6 @@
 import {
     extensions,
-    ILoggerDefaults,
+    IWinstonAzureBlob,
     winstonAzureBlob,
     WinstonAzureBlob,
 } from "../lib";
@@ -16,7 +16,7 @@ dotenv.config();
  * These tests require all 4 ENV variables (HOST, SAS_TOKEN, ACCOUNT_NAME, and ACCOUNT_KEY)
  */
 describe("WinstonAzureBlob", () => {
-    type _constants = Pick<ILoggerDefaults, "blobName" | "containerName">;
+    type _constants = Pick<IWinstonAzureBlob, "blobName" | "containerName">;
 
     const constants: _constants = {
         blobName: "test_log",
@@ -170,7 +170,7 @@ describe("WinstonAzureBlob", () => {
         expect(() => {
             winstonAzureBlob({
                 account: {
-                    connectionString: undefined as any
+                    connectionString: undefined as any,
                 },
 
                 bufferLogSize: 1,
