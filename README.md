@@ -39,7 +39,7 @@ const logger = winston.createLogger({
         // or
         host: 'The host address',
         sasToken: 'The Shared Access Signature token'
-        // or 
+        // or
         connectionString: 'A connection string for the storage account'
       },
       blobName: "The name of the blob",
@@ -59,22 +59,28 @@ logger.warn("Hello!");
 
 ## API
 
--   **account** Azure storage account credentials
-    -   **account.name:** The name of the Windows Azure storage account to use
-    -   **account.key:** The access key used to authenticate into this storage account
-    -   or
-    -   **account.host:** http address of storage account
-    -   **account.sasToken:** shared access signature of storage account
-    -   or
-    -   **account.connectionString:** A connection string for the storage account
--   **blobName:** The name of the blob to log
--   **bufferLogSize:** A minimum number of logs before syncing the blob, set to 1 if you want to sync at each log
--   **containerName:** The container which will contain the logs
--   **eol:** The character append to each log (By default, a carriage return)
--   **extension:** The file extension for the log file. Omit for no file extension. Currently the only extension supported is ".log" via `extensions`
--   **level:** Log level of messages for the transport (defaults to `info`).
--   **rotatePeriod:** A moment format ex: YYYY-MM-DD will generate blobName.2000.01.01
--   **syncTimeout:** The maximum time between two sync calls. Set to zero for realtime logging
+| Parameter       | Data Type              | Description                                                                                                         | Default           | Type/Options            |
+| --------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------- | ----------------- | ----------------------- |
+| `account`       | Object                 | Azure storage account credentials. Can provide either `name` & `key`, `host` & `sasToken`, or a `connectionString`. |                   | See below               |
+| `blobName`      | String                 | The name of the blob to log.                                                                                        |                   |                         |
+| `bufferLogSize` | Integer                | A minimum number of logs before syncing the blob.                                                                   | -1                |                         |
+| `containerName` | String                 | The container which will contain the logs.                                                                          |                   |                         |
+| `eol`           | String                 | The character appended to each log.                                                                                 | "\n"              |                         |
+| `extension`     | String                 | The file extension for the log file. Only ".log" is currently supported.                                            | No file extension | `.log` via `extensions` |
+| `level`         | String                 | Log level of messages for the transport.                                                                            | `info`            |                         |
+| `rotatePeriod`  | String (formatted)     | A moment format for blob name generation. Ex: `YYYY-MM-DD` will generate `blobName.2000.01.01`.                     | ""                |                         |
+| `syncTimeout`   | Integer (milliseconds) | The maximum time between two sync calls. Set to zero for realtime logging.                                          | 0                 |                         |
+
+### Account Credentials Options:
+
+| Field              | Data Type | Description                                          |
+| ------------------ | --------- | ---------------------------------------------------- |
+| `name`             | String    | Name of the Windows Azure storage account to use.    |
+| `key`              | String    | Access key to authenticate into the storage account. |
+| `host`             | String    | HTTP address of the storage account.                 |
+| `sasToken`         | String    | Shared access signature of the storage account.      |
+| `connectionString` | String    | A connection string for the storage account.         |
+
 
 ## Inspo & Credit
 

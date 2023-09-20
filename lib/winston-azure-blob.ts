@@ -27,18 +27,16 @@ type Account =
 export enum extensions {
     LOG = ".log",
 }
-interface IWinstonAzureBlob {
+export interface IWinstonAzureBlob {
     account: Account;
-    azBlobClient: BlobServiceClient;
     blobName: string;
-    buffer: Array<LogEntry>;
     bufferLogSize: number;
     containerName: string;
     eol: string;
     extension?: extensions;
     rotatePeriod: string;
     syncTimeout: number;
-    timeoutFn: NodeJS.Timeout | null;
+    timeoutFn?: NodeJS.Timeout | null;
 }
 
 /**
@@ -46,28 +44,15 @@ interface IWinstonAzureBlob {
  */
 export type ILoggerDefaults = Pick<
     IWinstonAzureBlob,
-    | "account"
-    | "blobName"
-    | "bufferLogSize"
-    | "containerName"
-    | "eol"
-    | "extension"
-    | "rotatePeriod"
-    | "syncTimeout"
+    "bufferLogSize" | "eol" | "extension" | "rotatePeriod" | "syncTimeout"
 >;
 
 /**
  * Default options for constructing logger
  */
 const loggerDefaults: ILoggerDefaults = {
-    account: {
-        key: "YOUR_ACCOUNT_KEY",
-        name: "YOUR_ACCOUNT_NAME",
-    },
-    blobName: "YOUR_BLOBNAME",
     // due to limitation of 50K block in azure blob storage we add some params to avoid the limit
     bufferLogSize: -1, // A minimum number of logs before syncing the blob, set to 1 if you want to sync at each log
-    containerName: "YOUR_CONTAINER",
     eol: "\n", // End of line character to concatenate log
     extension: undefined, // File extension for the log file
     rotatePeriod: "", // moment format to rotate log file
@@ -92,7 +77,9 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
     timeoutFn: NodeJS.Timeout | null;
 
     constructor(
-        opts: Transport.TransportStreamOptions & Partial<ILoggerDefaults>
+        opts: Transport.TransportStreamOptions &
+            Omit<IWinstonAzureBlob, keyof ILoggerDefaults> &
+            Partial<ILoggerDefaults>
     ) {
         super(opts);
 
@@ -189,35 +176,34 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
         return r;
     }
 
-    private static isValidAccountOpts(account_info: Account) {
-        if ("key" in account_info) {
-            if (
-                typeof account_info.key !== "string" ||
-                typeof account_info.name !== "string"
-            ) {
-                throw new Error(
-                    `Azure account key/name must be string values, received key:${typeof account_info.key}, name:${typeof account_info.name} `
-                );
-            }
-            return;
+    private static isValidAccountOpts(account: Account): void {
+        if (
+            "key" in account &&
+            (typeof account.key !== "string" ||
+                typeof account.name !== "string")
+        ) {
+            throw new Error(
+                `Azure account key/name must be string values, received key:${typeof account.key}, name:${typeof account.name} `
+            );
         }
 
-        if ("connectionString" in account_info) {
-            if (typeof account_info.connectionString !== "string") {
-                throw new Error(
-                    `Azure account connectionString must be a string value, received connectionString:${typeof account_info.connectionString} `
-                );
-            }
-            
-        } else {
-            if (
-                typeof account_info.host !== "string" ||
-                typeof account_info.sasToken !== "string"
-            ) {
-                throw new Error(
-                    `Azure account host/sasToken must be string values, received key:${typeof account_info.host}, name:${typeof account_info.sasToken} `
-                );
-            }
+        if (
+            "connectionString" in account &&
+            typeof account.connectionString !== "string"
+        ) {
+            throw new Error(
+                `Azure account connectionString must be a string value, received connectionString:${typeof account.connectionString} `
+            );
+        }
+
+        if (
+            !("key" in account || "connectionString" in account) &&
+            (typeof account.host !== "string" ||
+                typeof account.sasToken !== "string")
+        ) {
+            throw new Error(
+                `Azure account host/sasToken must be string values, received key:${typeof account.host}, name:${typeof account.sasToken} `
+            );
         }
     }
 
