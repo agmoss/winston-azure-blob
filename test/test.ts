@@ -106,6 +106,31 @@ describe("WinstonAzureBlob", () => {
         );
     });
 
+    it("has a proper file name with opts and string extension", () => {
+        const azBlob = winstonAzureBlob({
+            account: {
+                host: process.env.HOST || "host",
+                sasToken: process.env.SAS_TOKEN || "sasToken",
+            },
+            bufferLogSize: 1,
+            extension: ".json",
+            level: "info",
+            rotatePeriod: "YYYY-MM-DD",
+            syncTimeout: 0,
+            ...constants,
+        });
+
+        const generatedBlobName = WinstonAzureBlob.generateBlobName({
+            blobName: azBlob.blobName,
+            extension: azBlob.extension,
+            rotatePeriod: azBlob.rotatePeriod,
+        });
+
+        expect(generatedBlobName).to.equal(
+            constants.blobName + "." + formatYmd(new Date()) + ".json"
+        );
+    });
+
     it("sends logs", async () => {
         const contents = randAnimalType();
 

@@ -33,7 +33,7 @@ export interface IWinstonAzureBlob {
     bufferLogSize: number;
     containerName: string;
     eol: string;
-    extension?: extensions;
+    extension?: extensions | string;
     rotatePeriod: string;
     syncTimeout: number;
     timeoutFn?: NodeJS.Timeout | null;
@@ -71,7 +71,7 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
     bufferLogSize: number;
     containerName: string;
     eol: string;
-    extension: extensions | undefined;
+    extension?: extensions | string;
     rotatePeriod: string;
     syncTimeout: number;
     timeoutFn: NodeJS.Timeout | null;
