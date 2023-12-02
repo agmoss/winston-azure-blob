@@ -59,17 +59,17 @@ logger.warn("Hello!");
 
 ## API
 
-| Parameter       | Data Type              | Description                                                                                                         | Default           | Type/Options            |
-| --------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------- | ----------------- | ----------------------- |
-| `account`       | Object                 | Azure storage account credentials. Can provide either `name` & `key`, `host` & `sasToken`, or a `connectionString`. |                   | See below               |
-| `blobName`      | String                 | The name of the blob to log.                                                                                        |                   |                         |
-| `bufferLogSize` | Integer                | A minimum number of logs before syncing the blob.                                                                   | -1                |                         |
-| `containerName` | String                 | The container which will contain the logs.                                                                          |                   |                         |
-| `eol`           | String                 | The character appended to each log.                                                                                 | "\n"              |                         |
-| `extension`     | String                 | The file extension for the log file. Only ".log" is currently supported.                                            | No file extension | `.log` via `extensions` |
-| `level`         | String                 | Log level of messages for the transport.                                                                            | `info`            |                         |
-| `rotatePeriod`  | String (formatted)     | A moment format for blob name generation. Ex: `YYYY-MM-DD` will generate `blobName.2000.01.01`.                     | ""                |                         |
-| `syncTimeout`   | Integer (milliseconds) | The maximum time between two sync calls. Set to zero for realtime logging.                                          | 0                 |                         |
+| Parameter       | Data Type              | Description                                                                                                         | Default           | Type/Options                                     |
+| --------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------- | ----------------- | ------------------------------------------------ |
+| `account`       | Object                 | Azure storage account credentials. Can provide either `name` & `key`, `host` & `sasToken`, or a `connectionString`. |                   | See below                                        |
+| `blobName`      | String                 | The name of the blob to log.                                                                                        |                   |                                                  |
+| `bufferLogSize` | Integer                | A minimum number of logs before syncing the blob.                                                                   | -1                |                                                  |
+| `containerName` | String                 | The container which will contain the logs.                                                                          |                   |                                                  |
+| `eol`           | String                 | The character appended to each log.                                                                                 | "\n"              |                                                  |
+| `extension`     | String                 | The file extension for the log file.                                                                                | No file extension | `.log` via `extensions` or string file extension |
+| `level`         | String                 | Log level of messages for the transport.                                                                            | `info`            |                                                  |
+| `rotatePeriod`  | String (formatted)     | A moment format for blob name generation. Ex: `YYYY-MM-DD` will generate `blobName.2000.01.01`.                     | ""                |                                                  |
+| `syncTimeout`   | Integer (milliseconds) | The maximum time between two sync calls. Set to zero for realtime logging.                                          | 0                 |                                                  |
 
 ### Account Credentials Options:
 
@@ -80,7 +80,6 @@ logger.warn("Hello!");
 | `host`             | String    | HTTP address of the storage account.                 |
 | `sasToken`         | String    | Shared access signature of the storage account.      |
 | `connectionString` | String    | A connection string for the storage account.         |
-
 
 ## Inspo & Credit
 
