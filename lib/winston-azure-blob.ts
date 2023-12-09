@@ -34,11 +34,11 @@ export interface IWinstonAzureBlob {
     containerName: string;
     eol: string;
     extension?: extensions | string;
+    headers?: Array<string>;
     rotatePeriod: string;
     syncTimeout: number;
     timeoutFn?: NodeJS.Timeout | null;
 }
-
 /**
  * Default options for AzureBlob
  */
@@ -75,6 +75,7 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
     rotatePeriod: string;
     syncTimeout: number;
     timeoutFn: NodeJS.Timeout | null;
+    headers?: Array<string>;
 
     constructor(
         opts: Transport.TransportStreamOptions &
@@ -96,6 +97,7 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
         this.containerName = options.containerName;
         this.eol = options.eol;
         this.extension = options.extension;
+        this.headers = options.headers;
         this.rotatePeriod = options.rotatePeriod;
         this.syncTimeout = options.syncTimeout;
         this.timeoutFn = null;
@@ -210,10 +212,17 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
     private static async appendBlobOperation(
         appendBlobClient: AppendBlobClient,
         chunk: string,
-        nextAppendBlock: async.ErrorCallback<Error>
+        nextAppendBlock: async.ErrorCallback<Error>,
+        headers?: Array<string>
     ) {
         try {
-            await appendBlobClient.createIfNotExists();
+
+            const { succeeded } = await appendBlobClient.createIfNotExists();
+
+            if (succeeded && headers) {
+              await appendBlobClient.appendBlock(headers.join(",") + "\n", headers.join(",").length);
+            }
+
             const result = await appendBlobClient.appendBlock(
                 chunk,
                 chunk.length
@@ -300,7 +309,8 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
                 WinstonAzureBlob.appendBlobOperation(
                     appendBlobClient,
                     chunk,
-                    nextAppendBlock
+                    nextAppendBlock,
+                    this.headers
                 );
             },
             next
