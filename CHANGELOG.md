@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.5.0](https://github.com/agmoss/winston-azure-blob/compare/v1.4.2...v1.5.0) (2023-12-09)
+
+
+### Features
+
+* Adding a csv header for newly created blobs ([1073a0f](https://github.com/agmoss/winston-azure-blob/commit/1073a0f56e32c9b65a611240aacf23e76cd308b2))
+
 ### [1.4.2](https://github.com/agmoss/winston-azure-blob/compare/v1.4.1...v1.4.2) (2023-12-02)
 
 ### [1.4.1](https://github.com/agmoss/winston-azure-blob/compare/v1.4.0...v1.4.1) (2023-09-20)
