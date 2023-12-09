@@ -23,6 +23,11 @@ describe("WinstonAzureBlob", () => {
         containerName: "sample",
     };
 
+    const csvConstants: _constants = {
+        blobName: "test_log_csv",
+        containerName: constants.containerName
+    }
+
     const transport = winstonAzureBlob({
         account: {
             host: process.env.HOST || "host",
@@ -39,9 +44,11 @@ describe("WinstonAzureBlob", () => {
     const containerClient = client.getContainerClient(constants.containerName);
 
     const blobClient = containerClient.getBlobClient(constants.blobName);
+    const csvBlobClient = containerClient.getBlobClient(`${csvConstants.blobName}.csv`)
 
     after(async () => {
         await blobClient.delete();
+        await csvBlobClient.delete();
     });
 
     it("name and key options", () => {
@@ -152,6 +159,50 @@ describe("WinstonAzureBlob", () => {
             `{"level":"info","message":"${contents}"}\n`
         );
     });
+
+    it("handles csv headers", async () => {
+        const contents = randAnimalType();
+
+        const csvFormat = winston.format.printf(({ level, message, timestamp }) => {
+            return `${timestamp},${level},${message}`;
+        });
+
+        const logger = winston.createLogger({
+            format: winston.format.combine(
+                winston.format.timestamp(),
+                csvFormat
+            ),
+            transports: [winstonAzureBlob({
+                account: {
+                    host: process.env.HOST || "host",
+                    sasToken: process.env.SAS_TOKEN || "sasToken",
+                },
+                ...csvConstants,
+                extension: ".csv",
+                headers: ["timestamp", "level", "message"],
+                bufferLogSize: 1,
+                level: "info",
+                syncTimeout: 0,
+            })],
+        });
+
+        logger.info(contents);
+
+        await delay(1000);
+
+        const downloadBlockBlobResponse = await csvBlobClient.download();
+        const downloaded = await streamToString(
+            // @ts-ignore
+            downloadBlockBlobResponse.readableStreamBody
+        );
+
+        const firstLine = downloaded.split('\n')[0]
+
+        expect(firstLine).to.equal(
+            `timestamp,level,message`
+        );
+    });
+
 
     it("handles incorrect account key/name information", () => {
         expect(() => {
