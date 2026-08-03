@@ -29,6 +29,7 @@ export enum extensions {
 }
 export interface IWinstonAzureBlob {
     account: Account;
+    allowCreateContainer?: boolean;
     blobName: string;
     bufferLogSize: number;
     containerName: string;
@@ -44,13 +45,14 @@ export interface IWinstonAzureBlob {
  */
 export type ILoggerDefaults = Pick<
     IWinstonAzureBlob,
-    "bufferLogSize" | "eol" | "extension" | "rotatePeriod" | "syncTimeout"
+    "allowCreateContainer" | "bufferLogSize" | "eol" | "extension" | "rotatePeriod" | "syncTimeout"
 >;
 
 /**
  * Default options for constructing logger
  */
 const loggerDefaults: ILoggerDefaults = {
+    allowCreateContainer: false,
     // due to limitation of 50K block in azure blob storage we add some params to avoid the limit
     bufferLogSize: -1, // A minimum number of logs before syncing the blob, set to 1 if you want to sync at each log
     eol: "\n", // End of line character to concatenate log
@@ -65,6 +67,7 @@ const loggerDefaults: ILoggerDefaults = {
 //
 export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
     account!: Account;
+    allowCreateContainer: boolean;
     azBlobClient: BlobServiceClient;
     blobName: string;
     buffer: Array<LogEntry>;
@@ -96,6 +99,7 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
         this.bufferLogSize = options.bufferLogSize;
         this.containerName = options.containerName;
         this.eol = options.eol;
+        this.allowCreateContainer = options.allowCreateContainer ?? false;
         this.extension = options.extension;
         this.headers = options.headers;
         this.rotatePeriod = options.rotatePeriod;
@@ -270,7 +274,7 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
         }
     }
 
-    private logToAppendBlob(tasks: Array<LogEntry>, next: () => void) {
+    private async logToAppendBlob(tasks: Array<LogEntry>, next: (err?: Error) => void) {
         debug("Try to appendblock", tasks.length);
         // nothing to log
         if (tasks.length === 0) {
@@ -280,41 +284,64 @@ export class WinstonAzureBlob extends Transport implements IWinstonAzureBlob {
         const containerName = this.containerName;
         const containerClient = azClient.getContainerClient(containerName);
 
-        const blobName = WinstonAzureBlob.generateBlobName({
-            blobName: this.blobName,
-            extension: this.extension,
-            rotatePeriod: this.rotatePeriod,
-        });
+        try {
+            const exists = await containerClient.exists();
+            if (!exists) {
+                if (this.allowCreateContainer) {
+                    await containerClient.create();
+                } else {
+                    const err = new Error(`Container "${this.containerName}" does not exist. Set allowCreateContainer to true to allow automatic creation.`);
+                    debug(err);
+                    return next(err);
+                }
+            }
 
-        const appendBlobClient = containerClient.getAppendBlobClient(blobName);
+            const blobName = WinstonAzureBlob.generateBlobName({
+                blobName: this.blobName,
+                extension: this.extension,
+                rotatePeriod: this.rotatePeriod,
+            });
 
-        const toSend =
-            tasks
-                // Symbol cannot be used as an index type. Therefore, a cast is required.
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                .map((item) => item[MESSAGE as unknown as string])
-                .join(this.eol) + this.eol;
+            const appendBlobClient = containerClient.getAppendBlobClient(blobName);
 
-        const chunks = WinstonAzureBlob.chunkString(
-            toSend,
-            MAX_APPEND_BLOB_BLOCK_SIZE
-        );
+            const toSend =
+                tasks
+                    // Symbol cannot be used as an index type. Therefore, a cast is required.
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    .map((item) => item[MESSAGE as unknown as string])
+                    .join(this.eol) + this.eol;
 
-        debug("Numbers of appendblock needed", chunks.length);
-        debug("Size of chunks", toSend.length);
+            const chunks = WinstonAzureBlob.chunkString(
+                toSend,
+                MAX_APPEND_BLOB_BLOCK_SIZE
+            );
 
-        async.eachSeries(
-            chunks,
-            (chunk, nextAppendBlock) => {
-                WinstonAzureBlob.appendBlobOperation(
-                    appendBlobClient,
-                    chunk,
-                    nextAppendBlock,
-                    this.headers
-                );
-            },
-            next
-        );
+            debug("Numbers of appendblock needed", chunks.length);
+            debug("Size of chunks", toSend.length);
+
+            async.eachSeries(
+                chunks,
+                (chunk, nextAppendBlock) => {
+                    WinstonAzureBlob.appendBlobOperation(
+                        appendBlobClient,
+                        chunk,
+                        nextAppendBlock,
+                        this.headers
+                    );
+                },
+                (err) => {
+                    if (err) {
+                        debug(err);
+                        next(err);
+                    } else {
+                        next();
+                    }
+                }
+            );
+        } catch (err) {
+            debug(err);
+            next(err instanceof Error ? err : new Error(String(err)));
+        }
     }
 }
 
